@@ -62,7 +62,8 @@ def main():
                         "sized lines. Use 0 to try to preserve original lines "
                         "(default is 0)", type=int, default=0, required=False)
     args = parser.parse_args()
-    print(args)
+    if args.verbose:
+        print(args)
 
     curate_pdfs(args.path, args.out,
                 args.language, args.linewidth, args.verbose)

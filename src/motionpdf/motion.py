@@ -52,7 +52,7 @@ def convertPDF(files: List[Path], outdir: Path,
             outfile_path = str(Path(outdir / (str(pdf.stem) + ".txt")))
             with open(outfile_path, "+w") as outfile:
                 for line in text:
-                    outfile.write("Page {}\n".format(line[0]))
+                    outfile.write("Page {}\n".format(line[0] + 1))
                     if lineS == 0:
                         outfile.write("{}\n\n".format(line[1]))
                     else:
