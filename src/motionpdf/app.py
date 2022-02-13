@@ -6,7 +6,8 @@ import glob
 from motion import convertPDF
 
 
-def curate_pdfs(path: Path, o: str, directory: bool, verbose: bool) -> None:
+def curate_pdfs(path: Path, o: str, directory: bool, 
+                lang: str, lineS: int, verbose: bool) -> None:
     """Find the PDF files the user specified and send them to be converted"""
     o_path = None
     if o != os.getcwd():
@@ -21,12 +22,12 @@ def curate_pdfs(path: Path, o: str, directory: bool, verbose: bool) -> None:
         n = convertPDF(list(glob.glob("*.pdf")) + list(glob.glob("*.PDF")))
     else:
         if path.suffix.lower() == '.pdf':
-            n = convertPDF([path], o_path, verbose)
+            n = convertPDF([path], o_path, lang, lineS, verbose)
         else:
-            n = convertPDF([], o_path, verbose)
+            n = convertPDF([], o_path, lang, lineS, verbose)
     
     if verbose:
-        print("Converted {} PDF files.".format(n))
+        print("Converted {} PDF files!".format(n))
 
 
 def is_path(path_str: str) -> Path:
@@ -49,6 +50,13 @@ def main():
     parser.add_argument('--out', '-o', help="Directory to put the resulting "
                     ".txt file(s). Default: [currect directory]/text", 
                     type=str, default=os.getcwd(), required=False)
+    parser.add_argument('--language', '-l', help="Tesseract language code "
+                        "(e.g.) 'eng', 'spa', 'fra'. Defaults to 'eng'.",
+                        type=str, default='eng', required=False)
+    parser.add_argument('--linewidth', '-L', help="Maximum line size of output "
+                        "text (default is 120 characters).", type=int,
+                        default=120, required=False)
     parser.parse_args()
 
-    curate_pdfs(parser.path, parser.out, parser.directory, parser.verbose)
+    curate_pdfs(parser.path, parser.out, parser.directory, 
+                parser.language, parser.linewidth, parser.verbose)

@@ -1,10 +1,67 @@
+from os import mkdir
 from typing import List
 from pathlib import Path
+from pdf2image import convert_from_path
+from datetime import datetime
+import textwrap
+import shutil
+try:
+    from PIL import Image
+except ImportError:
+    import Image
+import pytesseract
+import glob
 
-def convertPDF(files: List[Path], outdir: Path, verbose: bool) -> int:
+def convertPDF(files: List[Path], outdir: Path, 
+               lang: str, lineS: int, verbose: bool) -> int:
     """Convert the list of PDF files to corresponding .txt files"""
     if len(files) == 0:
         if verbose:
             print("No PDF files found. Quitting.")
         return 0
-    return 1
+    sucessfully_processed = 0
+    try:
+        # create image directory
+        image_dir = Path(outdir / 
+            ("images" + datetime.strftime("%Y%m%d%H%M%S"))) 
+        image_dir.mkdir()
+        for pdf in files:
+            images = convert_from_path(pdf)
+            # create directory for this PDF file
+            this_pdf_dir = Path(image_dir / str(pdf.stem))
+            this_pdf_dir.mkdir()
+            # convert all files to jpegs
+            img_paths = [] 
+            for i in range(len(images)):
+                imgp = str(this_pdf_dir) + "/page" + str(i) + ".jpg", "JPEG"
+                images[i].save(imgp)
+                img_paths.append(imgp)
+            # read text to memory
+            text = []
+            for i in range(len(img_paths)):
+                page_text = pytesseract.image_to_string(Image.open(img_paths[i]), 
+                                                        lang=lang)
+                text.append((i, page_text))
+            # write read text to disk
+            outfile_path = str(Path(outdir / (str(pdf.stem) + ".txt")))
+            with open(outfile_path, "+x") as outfile:
+                for line in text:
+                    outfile.write("Page {}\n".format(line[0]))
+                    wrapped = textwrap.fill(line[1], width=lineS)
+                    outfile.write("{}\n\n".format(wrapped))
+            # if not verbose, delete images
+            if not verbose:
+                shutil.rmtree(image_dir)
+            # if verbose, print cute little dot, for we have successfully
+            # outputted a single page
+            if verbose:
+                print(".")
+            # increment success counter
+            sucessfully_processed += 1
+    except Exception as e:
+        if verbose:
+            print(e.with_traceback)
+        else:
+            print(e)
+        return sucessfully_processed
+    return sucessfully_processed
