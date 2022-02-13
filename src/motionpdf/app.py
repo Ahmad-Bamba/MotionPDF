@@ -6,7 +6,7 @@ import glob
 from motion import convertPDF
 
 
-def curate_pdfs(path: Path, o: str, directory: bool, 
+def curate_pdfs(path: Path, o: str, 
                 lang: str, lineS: int, verbose: bool) -> None:
     """Find the PDF files the user specified and send them to be converted"""
     o_path = None
@@ -18,8 +18,15 @@ def curate_pdfs(path: Path, o: str, directory: bool,
         
     n = 0
 
+    directory = path.is_dir()
     if directory:
-        n = convertPDF(list(glob.glob("*.pdf")) + list(glob.glob("*.PDF")))
+        print(path)
+        search_pdfs = list(glob.glob(str(path) + "/*.pdf")) \
+            + list(glob.glob(str(path) + "/*.PDF"))
+        search_pdfs = [Path(p) for p in search_pdfs]
+        print(search_pdfs)
+        n = convertPDF(search_pdfs,
+                       o_path, lang, lineS, verbose)
     else:
         if path.suffix.lower() == '.pdf':
             n = convertPDF([path], o_path, lang, lineS, verbose)
@@ -43,20 +50,24 @@ def main():
     parser = argparse.ArgumentParser(description="A script built on "
                                     "Tesseract-OCR for converting .pdf to .txt")
     parser.add_argument('path', help="Path to PDF file(s).", type=is_path)
-    parser.add_argument('--directory', '-d', action='store_true',
-                    help="Use if supplied path is directory of PDF files")
     parser.add_argument('--verbose', '-v', action='store_true', 
                     help="Print debug information")
     parser.add_argument('--out', '-o', help="Directory to put the resulting "
-                    ".txt file(s). Default: [currect directory]/text", 
+                    ".txt file(s). Default: [currect directory]", 
                     type=str, default=os.getcwd(), required=False)
     parser.add_argument('--language', '-l', help="Tesseract language code "
                         "(e.g.) 'eng', 'spa', 'fra'. Defaults to 'eng'.",
                         type=str, default='eng', required=False)
-    parser.add_argument('--linewidth', '-L', help="Maximum line size of output "
-                        "text (default is 120 characters).", type=int,
-                        default=120, required=False)
-    parser.parse_args()
+    parser.add_argument('--linewidth', '-L', help="Force output to wrap to "
+                        "sized lines. Use 0 to try to preserve original lines "
+                        "(default is 0)", type=int, default=0, required=False)
+    args = parser.parse_args()
+    print(args)
 
-    curate_pdfs(parser.path, parser.out, parser.directory, 
-                parser.language, parser.linewidth, parser.verbose)
+    curate_pdfs(args.path, args.out,
+                args.language, args.linewidth, args.verbose)
+
+
+# for local debugging only
+if __name__ == '__main__':
+    main()
